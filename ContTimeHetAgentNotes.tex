@@ -1,0 +1,271 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{booktabs,caption}
+\usepackage{epstopdf}
+\usepackage{threeparttable}
+\usepackage{makecell}
+\usepackage{natbib}
+%\linespread{1.1}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator{\Var}{\text{Var}}
+\DeclareMathOperator{\Cov}{\text{Cov}}
+\DeclareMathOperator{\Corr}{\text{Corr}}
+\DeclareMathOperator{\1}{\mathbbm{1}}
+\DeclareMathOperator{\argmin}{\text{argmin}}
+
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\title{\vspace{-7ex}Solving Heterogenous Agent Macro Models in Continuous Time}
+\author{Eirik Eylands Brands\aa s\thanks{University  of  Wisconsin-Madison.  E-mail: brandsaas@wisc.edu. }}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+In this lecture note we will write down a contiuous time variant of the Ayiagari-Bewley-Hugget type models, solve it using finite difference upwinding and extend the model to include housing. This notes will rely heavily on Achdou et al (2017). 
+
+\section{Model}
+Households maximize life time expected utility
+\begin{align}
+\E_0 \int_0^\infty e^{-\rho t} u(c_t) \diff t, \\
+\dot a_t = y_t + r_t a_t - c_t, \\
+a_t\ge 0.
+\end{align}
+
+We can find the HJB by 1) writing down the problem in discrete time and letting the time step go to zero, 2) invoking Ito's Lemma for jump processes or 3) a second order Taylor expansion. All methods yields
+\begin{align}\label{eq:HJB}
+\rho V(a,y) =& \max_{c} \big\{ u(c) + \dot a V_a(a,y) \big\} + \lambda [V(a,\tilde y) - V(a,y)],\\
+&\text{s.t: }\; \dot a = a r - c + y.
+\end{align}
+
+
+\subsection{Continuous Time Details}
+
+\subsection{First Order Condition}
+Note that the problem in \eqref{eq:HJB} can be solved easily since $u$ is concave, $V_a(a,y)$ is constant for $(a,y)$, so we have an interior solution
+\begin{equation}
+u_c(c)=V_a(a,y) \implies c=(u_c)^{-1} V_a(a,y)
+\end{equation}
+
+\section{Finite differences and upwinding}
+ Let $\partial V_{i,j}$ denote the numerical partial derivative of $V$ at grid $a_i,y_j$ with respect to assets. We can write out the discretized value function as 
+
+\begin{equation}
+\rho V(a,y) =u(c) + \dot a \partial V_{i,j} + \lambda [V_{i,-j} - V_{i,j}]
+\end{equation}
+
+\subsection{Finite difference}
+We need to find numerical derivatives for the value function, which can be done in many ways. The arguably best way is to use finite differences. Let $\Delta a$ define the distance between two grid points on the asset grid, e.g. $\Delta a=a_i-a_{i-1}$. The backward and forward (first) derivatives are defined as
+	\begin{align}
+	\partial_{B}V_{i,j}&=\frac{V_{i,j}-V_{i-1,j}}{\Delta a}, \label{eq:backder}\\
+	\partial_{F}V_{i,j}&=\frac{V_{i+1,j}-V_{i,j}}{\Delta a}. \label{eq:forder}
+	\end{align}
+	
+	\subsection{Upwinding (for concave functions)}
+	The next question is to decide when do we use what derivative? Upwinding tells us to use the up-derivative when that variable is drifting up and vice versa. First, find back/forward savings by:
+	\begin{equation}
+	\dot a_{i,j,F} = y_j + r a_i -(u_c)^{-1}(\partial V_{i,j,F}) \;\; 	\dot a_{i,j,B} = y_j + r a_i -(u_c)^{-1}(\partial V_{i,j,B}).
+	\end{equation}
+	
+	Then use the following rule for determining which derivative to use:
+	\begin{equation}\label{eq:upwind}
+	\partial V_{i,j}=\partial_F V_{i,j}\mathbf{1}_{\{\dot a_{i,j,F}>0\}} + \partial_B V_{i,j}\mathbf{1}_{\{\dot a_{i,j,B}<0\}} +  {\partial V_{i,j,0}}\mathbf{1}_{\{\dot a_{i,j,F}\le 0 \le \dot a_{i,j,B}\}},
+	\end{equation}
+	where use the `staying put' value if the forward/back drift disagrees on the sign. First, note that since $V$ is concave $\partial V_{i,j,F}<\partial V_{i,j,B}$. When the tiebreaker rule is in effect we set $\dot a_{i,j,0}=0$, and then we use find the derivative of the value function from the Envelope theorem: \begin{equation}
+    \partial	V_{i,j,0} = u_c(r a_i+y_j) \implies \dot a_{i,j} = 0
+	\end{equation}
+	
+	\subsection{Lets talk about the borrowing constraint}
+	The proper way is to set 
+	\begin{equation*}
+		\partial V_{1,j,B} = u_c(y_j + r a_1)
+	\end{equation*}
+	Note that from \eqref{eq:upwind} we can see that this condition will only be used when $\dot a_{1,j,F}<0$ If the forward policy rule implied positive drift at the boundary this state constraint does not bite, since $\dot a_{i,j,F}<\dot a_{i,j,B}$.
+	
+	
+	
+\section{Finding the Value Function - (Semi Implicit Method)}
+We have now found all policy functions given a value function $V^n$, and the remaining step is to update the value function. We will do so by the implicit method, but the most `natural' way is the explicit method:
+\begin{equation}
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta + \rho V^n{i,j} =u(c^n_{i,j}) + \dot a \partial V^n_{i,j} + \lambda [V^n_{i,-j} - V^n_{i,j}],
+\end{equation}
+where $\Delta$ is the step length, and so here the $n$ superscript essentially denotes time not iterations, and we iterate untill the time derivative is zero (since the model is stationary). Note that $c^n,\partial V^n, \dot a^n$ are all found using upwinding
+
+However, the best way to update the value function is to use the implicit method, where we use the following updating rule:
+\begin{equation}
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta + \rho V^{n+1}_{i,j} =u(c^n_{i,j}) + \dot a \partial V^{n+1}_{i,j} + \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
+\end{equation}
+where all policies are denoted $n$ and all value functions are denoted $n+1$. We can write this out by inserting for upwinding:
+\begin{equation}
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}{\Delta} +  \rho V^{n+1}_{i,j} =u(c^n_{i,j}) + \mathbf{1}_F\dot a_{i,j,F} \partial V^{n+1}_{i,j,F} + \mathbf{1}_B \dot a_{i,j,B} \partial V^{n+1}_{i,j,B} \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
+\end{equation}
+Where $\mathbf{1}_F \equiv \mathbf{1}_{\{ra_i + y_j - c_{i,j,F}>0\}}$, and  $c^n_{i,j}$ is still found by upwinding. The key is to recognize that this is a linear system: We have $N$ gridpoints for assets and $2$ for income, and so this is a system of $2\times N$ linear equations. This is becomes clear when we insert also for the derivatives:
+\begin{equation}
+\begin{split}
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}{\Delta} +  \rho V^{n+1}_{i,j} =&u(c^n_{i,j}) + \mathbf{1}_F\dot a_{i,j,F} \frac{V^{n+1}_{i+1,j} - V^{n,}_{i,j}}{\Delta a } + \mathbf{1}_B \dot a_{i,j,B} \frac{V^{n+1}_{i,j} - V^{n,}_{i-1,j}}{\Delta a}  \\
+ & + \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
+\end{split}
+\end{equation}
+note that all terms on the right-hand side are evaluated at grid point $i+1,i,i-1$, so we can collect all `weights' into $x,y,z$ (back, stay-put, forward)  depending on whether they load on $V_{i-1},V_i,V_{i+1}$:
+\begin{equation}\label{eq:systemeq}
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}{\Delta} +  \rho V^{n+1}_{i,j} =u(c^n_{i,j}) + V^{n+1}_{i+1,j}x_{i,j} + V^{n+1}_{i,j}y_{i,j} + V^{n+1}_{i-1,j}z_{i,j}
+ + \lambda V^{n+1}_{i,-j},
+\end{equation}
+where each weight is given by
+\begin{align*}
+x_{i,j} &=  -\frac{\mathbf{1}_B \dot a_{i,j,B}}{\Delta a}. \\
+y_{i,j} &=  \frac{\mathbf{1}_B \dot a_{i,j,B}}{\Delta a} -\frac{\mathbf{1}_F \dot a_{i,h,F}}{\Delta a} - \lambda. \\
+z_{i,j} &= \frac{\mathbf{1}_F \dot a_{i,j,F}}{\Delta a}.
+\end{align*}
+Note importantly that $x_{1,j}=z_{N,j}=0$, so that $V_{0,1},V_{N+1,j}$ are never used - {\color{red} why is this the case?}. Equation \eqref{eq:systemeq} can be written as:
+\begin{equation}
+\frac{1}{\Delta} (V^{n+1} - V^n) + \rho V^{n+1} = u^n + \mathbf{A}^nV^{n+1},
+\end{equation}
+where we have stacked the value functions and the utility functions into vectors:
+	\begin{equation*}
+	V^{n}=\begin{bmatrix}
+	V^n_{1,1} \\ 
+	 \vdots \\
+	V^n_{N,1} \\
+	V^n_{1,2} \\
+	\vdots \\
+	V^n_{N,2}
+	\end{bmatrix}, \text{ and } u^n=\begin{bmatrix}
+	u(c^n_{1,1}) \\ 
+	 \vdots \\
+	u(c^n_{N,1}) \\
+	u(c^n_{1,2}) \\
+	\vdots \\
+	u(c^n_{N,2})
+	\end{bmatrix}
+	\end{equation*}
+
+where the matrix $\mathbf{A}^n$ is given by:
+\begin{align}\label{eq:sparseA}
+	\mathbf{A}^n=&
+	\left[\begin{matrix}
+	y_{1,1} & z_{1,1} 	& 0 		& \ldots 	& 0 		\\
+	x_{2,1} & y_{2,1} 	& z_{2,1} 	& 0 		& 0			\\
+	0 		& x_{3,1} 	& y_{3,1} 	& z_{3,1} 	& 0			\\
+	\vdots 	& \ddots 	& \ddots 	& \ddots 	& \vdots	\\
+	0 		& \ldots 	& \ldots		& x_{na,1} 	& y_{na,1}	\\ \hline %% New sub matrix below
+	\lambda & 0		 	& 0 		& \dots 	& 0 		\\ 
+	0		& \lambda 	& 0		 	& 0 		& 0			\\
+	0 		& 0		 	& \lambda 	& 0		 	& 0			\\
+	\vdots 	& \ddots 	& \ddots  	& \ddots 	& \vdots	\\
+	0 		& \ldots 	& \ldots		& 0 		& \lambda
+	\end{matrix} \right| \
+	\left.\begin{matrix}
+	\lambda& 0		 	& 0 		& \ldots 	& 0 		\\
+	0		& \lambda 	& 0		 	& 0 		& 0			\\
+	0 		& 0		 	& \lambda 	& 0		 	& 0			\\
+	0	 	& \ddots 	& \ddots  	& \lambda 	& \vdots	\\
+	0 		& \ldots 	& \ldots		& 0 		& \lambda \\ \hline %% New syb matrix below
+	y_{1,2} & z_{1,2} 	& 0 		& \dots 	& 0 		\\
+	x_{2,2} & y_{2,2} 	& z_{2,2} 	& 0 		& \ldots		\\
+	0 		& x_{3,2} 	& y_{3,2} 	& z_{3,2} 	& 0			\\
+	\vdots 	& \ddots 	& \ddots 	& \ddots 	& \vdots	\\
+	0 		& \ldots 	& \ldots		& x_{na,2} 	& y_{na,2}
+	\end{matrix} \right|
+	\end{align}
+	Note that this matrix is block diagonal and extremely sparse, each row has at most 4 non-zero elements.
+	
+We can write the system as
+	\begin{equation}
+	\mathbf{B}^nV^{n+1} = b^n, \;\;\; \mathbf{B}^n = \left(\frac{1}{\Delta} + \rho \right)\mathbf{I} - \mathbf{A}^n, \;\;\; b^n= u^n + \frac{1}{\Delta}V^n
+	\end{equation}
+	and thus we have have a closed form solution for the updated value function at every grid point
+\begin{equation} V^{n+1}= (\mathbf{B^n})^{-1} b^n
+\end{equation}
+
+\subsection{Sidenote}
+Note that if $\Delta = \infty$, we get:
+\begin{equation}
+\rho V^{n+1} = u^n + A^n V^{n+1},
+\end{equation}
+in other words we have essentially just rewritten the HJB equation into a linear system where $A^n$ denotes transition probabilites  as function of the household's choices. One can then think of $A^n$ as a standard transition matrix, and one can see that each row of $A^n$ sums to zero, diagonal elements are non-positive and off-diagonal elements are non-negative. If all elements in a row were zero, that state would be absorbing.
+
+
+\section{Finding the Distribution}
+Let $g_{i,j}$ denote the mass of households with assets $a_i$ and income $y_j$, so that we have
+\begin{equation}
+\int_0^\infty g(a,y_1)\diff a + \int_0^\infty g(a,y_2)\diff a =1
+\end{equation}
+
+The (stationary) equilibrium condition is called the Kolmogorov Forward (KF) or Fokker-Planck equation:
+\begin{equation}
+0 = - \frac{\diff}{\diff a} [\dot a(a,y_j)g(a,y_j)] - \lambda g(a,y_j) + \lambda g(a,y_{-j})
+\end{equation}
+which is essentially saying that that the net drift in/out of $(a,j)$ must be zero. How do we find this equation? It turn's out this matrix $\mathbf{A}$ gives us the stationary distribution! Write out the upwind approximation for this:
+\begin{equation*}
+-\frac{\mathbf{1}_F \dot a_{i,j,F} g_{i,j} - \mathbf{1}_F \dot a_{i-1,j,F} g_{i-1,j}}{\Delta a} - \frac{\mathbf{1}_B \dot a_{i+1,j,B} g_{i+1,j} - \mathbf{1}_B \dot a_{i,j,B} g_{i,j}}{\Delta a} - g_{i,j}\lambda_j - g_{i,-j}\lambda_j=0,
+\end{equation*}
+and note that the forward are not at $i,i-1$ and the back at $i+1,i$. We can write this as we did before to as a linear system:
+\begin{align*}
+0&=g_{i-1,j-1} z_{i-1,j} + g_{i,j} y_{i,j} + g_{i+1,j} x_{i+1,j} + g_{i,-j}\lambda \\
+x_{i+1,j} &=  -\frac{\mathbf{1}_B \dot a_{i+1,j,B}}{\Delta a}. \\
+y_{i,j} &=  \frac{\mathbf{1}_B \dot a_{i,j,B}}{\Delta a} -\frac{\mathbf{1}_F \dot a_{i,h,F}}{\Delta a} - \lambda. \\
+z_{i-1,j} &= \frac{\mathbf{1}_F \dot a_{i-1,j,F}}{\Delta a}.
+\end{align*}
+Frin these expressions we see clearly that we are capturing the mass that flows up from $i-1,j$, the mass that stays, the mass that flows down from $i+1,j$ and the mass that jumps from $i,-j$. But then we see that this defines the following equation:
+\begin{equation}
+\mathbf{A}^{T}g = 0,
+\end{equation}
+where $T$ denotes the transpose. In the language of dynamic control, $\mathbf{A}$ is the discretized infintesimal generator and $\mathbf{A}^T$ is the discretized Kolmogorov Forward operator.
+
+\subsection{Equilibrium}
+The last remaining piece is to close the asset market. The simples way is to use Hugget's version, where the net supply of bonds equals some level, say 0:
+\begin{equation}
+0=\int_0^\infty ag(a,1) \diff a  + \int_0^\infty ag(a,2) \diff a  \implies  0=\sum_{i=1}^N a_ig_{i,1} \Delta a + \sum_{i=1}^N a_ig_{i,2} \Delta a
+\end{equation}
+
+\section{Example of Extension: Housing}
+It is often said that one looses many of the benefits from continuous time when the model is no longer `smooth'. We therefor show how to solve the model when we including indivisible housing and a down-payment constraint, to so that we include financial frictions and an indivisible assets. Sounds complicated, but it's straightforward. For simplicity we just solve the decision problem:
+
+\subsection{Primitives}
+Households have preferences over consumption and housing services $h$:
+\begin{equation}
+\E_0 \int_0^\infty e^{-\rho t} u(c_t,h_t)\diff t.
+\end{equation}
+Househoulds can borrow and save in a risk free bond $b_t$ and buy housing services at a price $p$. There are no house sizes below $h_{min}>0$, so a household chooses between not owning a house $h=0$ or having a house larger than $h_{min}$. The budget constraint is given by:
+\begin{equation*}
+\dot b + p \dot h = y +r b - c
+\end{equation*}
+To buy a house the household must afford the downpayment of $d$ as a fraction of the market value:
+\begin{equation*}
+-b \le (1-d)ph.
+\end{equation*}
+We thus have a model with collaterilized lending with a loan-to-value constraint. Assume that utility is quasi-linear:
+\begin{equation}
+u(c,h)=\tilde u(c + f(h)) 
+\end{equation}
+
+\subsection{Writing down the problem}
+We rewrite the problem to be formulated in net-worth terms: $ a=b+ph $, and $\dot a = y + r(a - ph) -c$. The borrowing constraint changes to be $ph<\frac{1}{d} a$,  and we can denote the set of feasible housing choices by $\mathcal{H}(a)$:
+\begin{equation*}
+\mathcal{H}(a) = \{h: dph \le a  \} \cap \{[0,[h_{min},\infty] \}
+\end{equation*}
+
+We can then write down the HJB equation:
+\begin{equation}
+\rho V(a,y) = \max_{c,h} \big \{ \tilde u (c + f(h)) + V_a (y + r(a-ph) - c)\big \} - \lambda [V(a,y) - V(a,\tilde y)] 
+\end{equation}
+
+We can solve the model two ways, either by finding the policies numerically, or we can do a change of variables. First, define a function $\tilde f(a)$ that denotes the pecuniary equivalent of utility from housing:
+\begin{equation}
+\tilde f (a) = \max_{h\in \mathcal{H}(a)} \big \{ f(h) - rph \},
+\end{equation}
+This function has `two' solution, either $\mathcal{H}=\{0\}$ or you may afford some house size. Then compare $h=\argmax\{f(0), f(h^{unc} - rph^{unc})\}$
+
+which has an unconstrained solution $f_h(h^{unc})=rp$. If the unconstrained policy is not in the feasible set, the best is Then, define aggregate consumption $x=c+f(h)$, and we can rewrite the HJB equation:
+\begin{align*}
+\rho V(a,y) &= \max_{c,h} \big \{ \tilde u (x) + V_a (y + ra + \tilde f(a) - x)  \big \} - \lambda [V(a,y) - V(a,\tilde y)] \\
+\tilde f (a) &= \max_{h\in \mathcal{H}(a)} \big \{ f(h) - rph \}
+\end{align*}
+
+
+\end{document}
