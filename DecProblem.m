@@ -9,7 +9,7 @@ r = 0.01;
 
 % grids
 Na = 200;
-amin=0.001;
+amin=0.0;
 amax=3.0;
 agrid = linspace(amin,amax,Na)';
 Da = agrid(2)-agrid(1);
@@ -71,7 +71,7 @@ for n=1:maxit
         adotb(:,iy) = bc(cb(:,iy),ygrid(iy),agrid);;
         
         c0(:,iy) = ygrid(iy) + r*agrid;
-        dV0 = uprime(c0,gamma);
+        dV0(:,iy) = uprime(c0(:,iy),gamma);
         
         If(:,iy) = adotf(:,iy)>0; %10^(-6);
         Ib(:,iy) = adotb(:,iy)<0; %-10^(-6);

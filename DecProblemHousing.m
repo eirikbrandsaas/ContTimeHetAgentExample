@@ -3,14 +3,14 @@ clc
 clear 
 lambda = 0.02;
 gamma = 3.5;
-eta = 1.5
+eta = 0.5;
 chi = 1.0;
 rho = 0.018;
 r = 0.01;
 
 % grids
-Na = 50;
-amin=0.001;
+Na = 550;
+amin=0.0;
 amax=5.0;
 agrid = linspace(amin,amax,Na)';
 Da = agrid(2)-agrid(1);
@@ -20,7 +20,7 @@ z = [1 3];
 ygrid = w*z;
 Ny=length(ygrid);
 
-p=2.0;
+p=1.0;
 % create matrices for the states to make some stuff easier
 aa = agrid * ones(1,Ny);
 yy = ones(Na,1)*ygrid;
@@ -37,7 +37,7 @@ bc = @(c,y,a) y - c + r*a ;
 
 
 % numerical parameters
-maxit = 25;
+maxit = 1;
 crit = 10^(-6);
 Delta = 1000;
 
@@ -56,45 +56,43 @@ I0 = false(Na,Ny);
 V   = zeros(Na,Ny);
 
 % initial guess (present value of staying put forever)
-V0 =util(r.*aa + yy,gamma)/rho;
+V0 =util(r.*aa + yy,gamma)/rho*0.1;
 Vnew = V0;
 
 %%
 for n=1:maxit
     %disp(sprintf('Starting iteration %d',n))
     V = Vnew;
-    for iy=1:Ny
-        dVf(1:Na-1,iy) = (V(2:Na,iy) - V(1:Na-1,iy))/Da;
-        dVb(2:Na,iy) = (V(2:Na,iy) - V(1:Na-1,iy))/Da;
-        
-        % End point corrections, only the first is important
-        dVb(1,iy) = uprime(ygrid(iy) + r*amin,gamma);
-        dVf(Na,iy) = uprime(ygrid(iy) + r*amax,gamma); 
+   
+    dVf(1:Na-1,:) = (V(2:Na,:) - V(1:Na-1,:))/Da;
+    dVb(2:Na,:) = (V(2:Na,:) - V(1:Na-1,:))/Da;
 
-        cf(:,iy) = uprimeinv(dVf(:,iy),gamma) ;
-        cb(:,iy) = uprimeinv(dVb(:,iy),gamma) ;
-        
-        hf(:,iy) = fprimeinv(p*dVf(:,iy),eta);
-        hb(:,iy) = fprimeinv(p*dVb(:,iy),eta);
-        
-        adotf(:,iy) = bc(cf(:,iy)+p*hf(:,iy),ygrid(iy),agrid);
-        adotb(:,iy) = bc(cb(:,iy)+p*hb(:,iy),ygrid(iy),agrid);
-        
-        c0(:,iy) = ygrid(iy) + r*agrid;
-        dV0 = uprime(c0,gamma);
-        
-        If(:,iy) = adotf(:,iy)>0; %10^(-6);
-        Ib(:,iy) = adotb(:,iy)<0; %-10^(-6);
-        % I0(:,iy) = 1 - If(:,iy) - Ib(:,iy); (Using this line you instead
-        % of the line outside the loop can lead to imaginary numbers, no
-        % idea why...
-    end
+    % End point corrections, only the first is important
+    dVb(1,:) = uprime(ygrid + r*amin,gamma);
+    dVf(Na,:) = uprime(ygrid + r*amax,gamma); 
+
+    cf = uprimeinv(dVf,gamma) ;
+    cb = uprimeinv(dVb,gamma) ;
+
+    hf = fprimeinv(p*dVf,eta);
+    hb = fprimeinv(p*dVb,eta);
+
+    adotf = bc(cf+p*hf,yy,aa);
+    adotb = bc(cb+p*hb,yy,aa);
+
+    c0 = yy + r*aa;
+    dV0 = uprime(c0,gamma);
+
+
+   
     
+    Hf = util(cf,gamma) + f(hf,eta) + dVf.*adotf
+    Hb = util(cb,gamma) + f(hb,eta) + dVb.*adotf
     Ineither = (1-(adotf>0)) .* (1-(adotb<0));
     Iunique = (adotb<0).*(1-(adotf>0)) + (1-(adotb<0)).*(adotf>0);
     Iboth = (adotb<0).*(adotf>0);
-    Ib = Iunique.*(adotb<0) ;%+ Iboth.*(Hb>=Hf);
-    If = Iunique.*(adotf>0) ;%+ Iboth.*(Hf>=Hb);
+    Ib = Iunique.*(adotb<0) + Iboth.*(Hb>=Hf);
+    If = Iunique.*(adotf>0) + Iboth.*(Hf>=Hb);
     I0 = Ineither;
     I0 = (1-If-Ib);
     
