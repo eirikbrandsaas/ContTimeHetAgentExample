@@ -32,7 +32,7 @@ bc = @(c,y,a) y - c + r*a ;
 
 % numerical parameters
 maxit = 15;
-crit = 10^(-6);
+crit = 10^(-4);
 Delta = 1000;
 
 % preallocate some variables
@@ -47,7 +47,6 @@ adotb = zeros(Na,Ny);
 If = false(Na,Ny);
 Ib = false(Na,Ny);
 I0 = false(Na,Ny);
-V   = zeros(Na,Ny);
 
 % initial guess (present value of staying put forever)
 V0 =util(r.*aa + yy,gamma)/rho;
@@ -68,7 +67,7 @@ for n=1:maxit
         cf(:,iy) = uprimeinv(dVf(:,iy),gamma) ;
         cb(:,iy) = uprimeinv(dVb(:,iy),gamma) ;
         adotf(:,iy) = bc(cf(:,iy),ygrid(iy),agrid);
-        adotb(:,iy) = bc(cb(:,iy),ygrid(iy),agrid);;
+        adotb(:,iy) = bc(cb(:,iy),ygrid(iy),agrid);
         
         c0(:,iy) = ygrid(iy) + r*agrid;
         dV0(:,iy) = uprime(c0(:,iy),gamma);
@@ -109,7 +108,8 @@ for n=1:maxit
     
     diff = max(max(abs(Vnew - V)));
     if diff<crit
-        disp(sprintf('Value function converged on iteration %d',n));
+        fprintf('Value function converged on iteration %d, distance %f \n',n,diff);
+        diff
         break
     end
 end
