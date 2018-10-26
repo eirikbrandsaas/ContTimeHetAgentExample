@@ -229,7 +229,7 @@ It is often said that one looses many of the benefits from continuous time when 
 \subsection{Primitives}
 Households have preferences over consumption and housing services $h$:
 \begin{equation}
-\E_0 \int_0^\infty e^{-\rho t} u(c_t,h_t)\diff t.
+\E_0 \int_0^\infty e^{-\rho t} U(c_t,h_t)\diff t.
 \end{equation}
 Househoulds can borrow and save in a risk free bond $b_t$ and buy housing services at a price $p$. There are no house sizes below $h_{min}>0$, so a household chooses between not owning a house $h=0$ or having a house larger than $h_{min}$. The budget constraint is given by:
 \begin{equation*}
@@ -239,9 +239,9 @@ To buy a house the household must afford the downpayment of $d$ as a fraction of
 \begin{equation*}
 -b \le (1-d)ph.
 \end{equation*}
-We thus have a model with collaterilized lending with a loan-to-value constraint. Assume that utility is quasi-linear:
+We thus have a model with collaterilized lending with a loan-to-value constraint. Assume for simplicity that utility is seperable:
 \begin{equation}
-u(c,h)=\tilde u(c + f(h)) 
+U(c,h)=u(c + f(h))
 \end{equation}
 
 \subsection{Writing down the problem}
@@ -252,20 +252,21 @@ We rewrite the problem to be formulated in net-worth terms: $ a=b+ph $, and $\do
 
 We can then write down the HJB equation:
 \begin{equation}
-\rho V(a,y) = \max_{c,h} \big \{ \tilde u (c + f(h)) + V_a (y + r(a-ph) - c)\big \} - \lambda [V(a,y) - V(a,\tilde y)] 
+\rho V(a,y) = \max_{c\ge 0 ,h\in \mathcal{H}} \big \{ u (c + f(h)) + V_a (y + r(a-ph) - c)\big \} - \lambda [V(a,y) - V(a,\tilde y)] 
 \end{equation}
 
 We can solve the model two ways, either by finding the policies numerically, or we can do a change of variables. First, define a function $\tilde f(a)$ that denotes the pecuniary equivalent of utility from housing:
 \begin{equation}
 \tilde f (a) = \max_{h\in \mathcal{H}(a)} \big \{ f(h) - rph \},
 \end{equation}
-This function has `two' solution, either $\mathcal{H}=\{0\}$ or you may afford some house size. Then compare $h=\argmax\{f(0), f(h^{unc} - rph^{unc})\}$
 
-which has an unconstrained solution $f_h(h^{unc})=rp$. If the unconstrained policy is not in the feasible set, the best is Then, define aggregate consumption $x=c+f(h)$, and we can rewrite the HJB equation:
+Then, define aggregate consumption $x=c+f(h)$, and we can rewrite the HJB equation:
 \begin{align*}
 \rho V(a,y) &= \max_{c,h} \big \{ \tilde u (x) + V_a (y + ra + \tilde f(a) - x)  \big \} - \lambda [V(a,y) - V(a,\tilde y)] \\
 \tilde f (a) &= \max_{h\in \mathcal{H}(a)} \big \{ f(h) - rph \}
 \end{align*}
+
+Note the particular formulation of utility: {\color{red} We will consume only housing untill $f'(h)=rp$, at which point we only consume goods}
 
 
 \end{document}
