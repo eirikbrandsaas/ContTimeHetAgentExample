@@ -1,8 +1,8 @@
 %% Set parameters
 clc
 clear 
-lambda = 0.02;
-gamma = 3.5;
+lambda = 0.05;
+gamma = 2.5;
 
 rho = 0.018;
 r = 0.01;
@@ -10,7 +10,7 @@ r = 0.01;
 % grids
 Na = 200;
 amin=0.0;
-amax=3.0;
+amax=2.0;
 agrid = linspace(amin,amax,Na)';
 Da = agrid(2)-agrid(1);
 
@@ -138,20 +138,28 @@ g = [gstack(1:Na), gstack(Na+1:2*Na)];
 %% Next lets plot the results
 
 figure(1)
-subplot(2,2,1)
+subplot(1,3,1)
 plot(agrid,V)
+legend('Low Income','High Income','Location','SE')
 title("Value function")
 
-subplot(2,2,2)
+subplot(1,3,2)
 plot(agrid,adot)
 title("Savings adot")
 hold on
-plot(agrid,zeros(Na))
+plot(agrid,zeros(Na),'k')
 hold off
 
-subplot(2,4,5:6)
-plot(agrid,g)
-title("Distribution")
+subplot(1,3,3)
+area(agrid,g)
+title("Conditional Distribution")
+
+% 
+% subplot(2,2,4)
+% bar(agrid,sum(g,2))
+% title("Wealth Distribution")
+fig.PaperPositionMode = 'auto';
+print("tabfig/benchmarksol",'-depsc2','-r0')
 
 
 

@@ -1,25 +1,28 @@
 %% Set parameters
 clc
 clear 
-lambda = 0.2;
-gamma = 3.5;
-eta = 1.3;
-p = 8.0;
-rho = 0.045;
-r = 0.015;
-d = 0.4;
-hmin = 0.5
-alpha = 0.2;
+lambda = 0.5;
+gamma = 3;
+eta = 0.3;
+p = 7;
+rho = 0.031;
+r = 0.013;
+d = 0.3;
+hmin = 0.23;
+hmax = 1.8;
+alpha = 0.5;
 % grids
-Na = 600;
-amin=0.0;
-amax=3.;
+Na = 300;
+amin=-0.5;
+amax=2;
 agrid = linspace(amin,amax,Na)';
 Da = agrid(2)-agrid(1);
 
-w =0.015;
-z = [1 5];
+w =0.01;
+z = [1 6];
 ygrid = w*z;
+
+%% 
 Ny=length(ygrid);
 
 % create matrices for the states to make some stuff easier
@@ -37,11 +40,14 @@ fprimeinv =@(dV,eta) -1/eta * log(r*p/(eta*alpha));
 
 h = min(fprimeinv(r*p,eta), aa./(d*p));
 h = h.*(h>hmin);
+h = min(h,hmax);
 bc = @(c,f,y,a) y + f +r*a - c;
+
+
 %%
 % numerical parameters
 maxit = 30;
-crit = 10^(-6);
+crit = 10^(-8);
 Delta = 100;
 
 % preallocate some variables
@@ -130,26 +136,8 @@ for n=1:maxit
 end
 %V=Vnew;
 
-It = If + Ib;
+AT=transpose(A);
 
-
-toc
-%% Distribution - Old way of finding the stationary distribution
-AT= A';
-tempvec = zeros(Na*2,1);
-
-% Need to hack one value so that it's not singular
-ihack = 500;
-tempvec(ihack) = 0.1;
-row = zeros(1,Na*2);
-row(ihack) = 1;
-AT(ihack,:) = row;
-
-gstack = AT\tempvec;
-gmass = ones(1,2*Na)*gstack*Da;
-gstack = gstack/gmass;
-
-g = [gstack(1:Na), gstack(Na+1:2*Na)];
 
 %% Distribution - iterative
 % start with uniform
@@ -170,39 +158,109 @@ end
 
 g2 = [gstack(1:Na), gstack(Na+1:2*Na)];
 
+%% Distribution - iterative 2
+% start with uniform
+gstack = zeros(2*Na,1);
+gstack(1) = 1.0;
+gmass = ones(1,2*Na)*gstack*Da;
+gstack = gstack./gmass;
+gnew = gmass;
+N = 500;
+dt = 10;
+for i=1:N
+    gnew= (speye(2*Na) - AT*dt)\gstack;
+    dist = max(abs(gnew-gstack));
+    gstack = gnew;
+    if dist < crit
+        break
+    end
+end
 
+g1 = [gstack(1:Na), gstack(Na+1:2*Na)];
 
 %% Next lets plot the results
 
+astar = p*hmin*d % First time you can afford the house
+
+
 figure(1)
-subplot(3,2,1)
+subplot(2,3,1)
+
 plot(agrid,V)
 title("Value function")
+legend('Low Income','High Income','Location','SE')
+hold on;
+line([astar astar],[-65,50],'Color','k','LineStyle','--')
+hold off;
+ylim([-65 -45])
 
-subplot(3,2,2)
+
+
+subplot(2,3,2)
 plot(agrid,adot)
 title("Savings adot")
-hold on
-plot(agrid,zeros(Na))
-hold off
 
-subplot(3,2,3)
-plot(agrid,[c c-func(h,eta)])
-title("Consumption")
+hold on;
+plot(agrid,zeros(Na),'k')
+line([astar astar],[-0.1,0.1],'Color','k','LineStyle','--')
+hold off;
+%ylim([-65 -45])
 
-subplot(3,2,4)
+subplot(2,3,3)
+plot(agrid,c)
+title("Total Consumption (x)")
+hold on;
+line([astar astar],[0.45,0.65],'Color','k','LineStyle','--')
+hold off;
+
+subplot(2,3,4)
 plot(agrid,h)
 title("Housing")
+hold on;
+line([astar astar],[0.,1],'Color','k','LineStyle','--')
+hold off;
 
 
-subplot(3,2,5)
-plot(agrid,g)
-title("Distribution using old method")
+subplot(2,3,5)
+area(agrid,g1)
+title("Stationary Distribution #1")
+hold on;
+line([astar astar],[0.,40],'Color','k','LineStyle','--')
+hold off;
 
-subplot(3,2,6)
-plot(agrid,g2)
-title("Distribution using iterative method")
+subplot(2,3,6)
+area(agrid,g2)
+title("Stationary Distribution #2")
+hold on;
+line([astar astar],[0.,10],'Color','k','LineStyle','--')
+hold off;
+
+fig.PaperPositionMode = 'auto';
+print("tabfig/benchmarksol_housing",'-depsc2','-r0')
+%print("tabfig/benchmarksol_housing",'-depsc2','-r0')
 
     
     
-    
+%% 
+%% These parameters work!
+% clc
+% clear 
+% lambda = 0.3;
+% gamma = 3.5;
+% eta = 1.1;
+% p = 8.0;
+% rho = 0.045;
+% r = 0.015;
+% d = 0.38;
+% hmin = 0.19;
+% alpha = 0.2;
+% % grids
+% Na = 200;
+% amin=0.0;
+% amax=1.5;
+% agrid = linspace(amin,amax,Na)';
+% Da = agrid(2)-agrid(1);
+% 
+% w =0.011;
+% z = [1 7];
+% ygrid = w*z;
