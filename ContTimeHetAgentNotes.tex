@@ -10,6 +10,7 @@
 \usepackage{threeparttable}
 \usepackage{makecell}
 \usepackage{natbib}
+\bibliographystyle{apalike}
 \usepackage{hyperref}
 %\linespread{1.1}
 \DeclareMathOperator*{\argmax}{arg\,max}
@@ -27,10 +28,12 @@
 \maketitle
 
 \section{Introduction}
-In this lecture note we will write down a continuous time variant of the Aiyagari-Bewley-Hugget type models, solve it using finite difference upwinding and extend the model to include housing. This notes will rely heavily on Achdou et al (2017). 
+In this lecture note we will write down a continuous time variant of the Aiyagari-Bewley-Hugget type models, solve it using finite difference upwinding and extend the model to include housing. This notes will rely heavily on \cite{Achdou2017} and its numerical appendix \cite{Achdou2017a}.
+
+Matlab code is published at on Github, \href{https://github.com/eirikeb/ContTimeHetAgentExample/}{\texttt{ContTimeHetAgentExample}}, and I highly recommend all of you to install and learn how to use Git(hub).
 
 \subsection{Preview of Results}
-At the end of this lecture you will be able to `instantly' solve equilibrium models with heterogeneous agents, and find the joint income-wealth distributions. In addition we will deal with non-convexities, models with multiple stationary distributions and even a model with heterogeneous families consisting of multiple altruistic households interacting without commitment - all solved using the same numerical method.
+At the end of this lecture you will be able to `instantly' solve equilibrium models with heterogeneous agents, and find the joint income-wealth distributions. In addition we will deal with non-convexities, models with multiple stationary distributions and financial frictions in a model with housing and a downpayment requirement.
 
 
 
@@ -79,7 +82,7 @@ We need to find numerical derivatives for the value function, which can be done 
 	
 A method that is computationally easier, but easily breaks is to always use the centered derivative, and ignore upwinding. The centered derivative is
 \begin{equation*}
-	\partial_{C}V_{i,j}1=\frac{V_{i+1,j}-V_{i-1,j}}{\Delta a}.
+	\partial_{C}V_{i,j}=\frac{V_{i+1,j}-V_{i-1,j}}{\Delta a}.
 \end{equation*}
 My intuition is that the upwind method is preferred because it uses the forward derivative when we are drifting up, so that it takes into account the `dynamic' nature of the drift, and uses a more accurate derivative for the given movement.
 	
@@ -119,10 +122,22 @@ We have now found all policy functions given a value function $V^n$, and the rem
 
 We will do so by the implicit method, but the most `natural' way is the explicit method:
 \subsubsection{Explicit method}
-\begin{equation}
+\begin{equation}\label{eq:explicit}
 \frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta + \rho V^n{i,j} =u(c^n_{i,j}) + \dot a \partial V^n_{i,j} + \lambda [V^n_{i,-j} - V^n_{i,j}],
 \end{equation}
 where $\Delta$ is the step length, and so here the $n$ superscript essentially denotes time instead of iterations, and we iterate until the time derivative is zero (since the model is stationary we know that $\frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta\approx \frac{\partial V}{\partial t}\approx =0$). Note that $c^n,\partial V^n, \dot a^n$ are all found using upwinding. Also note how similar this is to standard value function iteration.
+
+\begin{enumerate}
+\item Start with an initial guess
+\item Given the guess, find forward/back derivatives
+\item Given the derivatives, find the implied drifts $\dot a$
+\item Given the drifts, use the upwinding rule in \eqref{eq:upwind} to find the indicators
+\item Use the indicators to find which drift and consumption to use
+\item Find the new value function from equation \eqref{eq:explicit}
+\item Repeat steps 2-6 untill the value function converges
+\end{enumerate}
+
+Note that the explicit method requires small time steps (the maximum size is given by the  so-called Courant-Friedrichs-Lewy (CFL) condition) and is not robust.
 
 \subsection{Implicit Method}\label{sec:implicitmethod}
 However, the best way to update the value function is to use the implicit method, where we use the following updating rule:
@@ -209,8 +224,12 @@ We can write the system as
 	\mathbf{B}^nV^{n+1} = b^n, \;\;\; \mathbf{B}^n = \left(\frac{1}{\Delta} + \rho \right)\mathbf{I} - \mathbf{A}^n, \;\;\; b^n= u^n + \frac{1}{\Delta}V^n
 	\end{equation*}
 	and thus we have have a closed form solution for the updated value function at every grid point
-\begin{equation} V^{n+1}= (\mathbf{B^n})^{-1} b^n
+\begin{equation} \label{eq:implicit}
+	V^{n+1}= (\mathbf{B^n})^{-1} b^n
 \end{equation}
+
+\subsubsection{Summary of Algorithm}
+The algorithm is identical to the one of the explicit method, just that we update the value function from equation \eqref{eq:implicit} instead of using equation \ref{eq:implicit}.
 
 
 
@@ -251,9 +270,23 @@ where $T$ denotes the transpose. In the language of dynamic control, $\mathbf{A}
 
 \subsection{Equilibrium}
 The last remaining piece is to close the asset market. The easiest way is to use Hugget's version, where the net supply of bonds equals some exogenous level $\bar b$, say $\bar b = 0$:
+\begin{equation*}
+\begin{split}
+&0=\int_0^\infty ag(a,1) \diff a  + \int_0^\infty ag(a,2) \diff a = A(g;r) \\  \implies  & 0=\sum_{i=1}^N a_ig_{i,1} \Delta a + \sum_{i=1}^N a_ig_{i,2} \Delta a
+\end{split}
+\end{equation*}
+
+
+To be more formal we are looking for a solution $\mathbf{V},\mathbf{g}S(\mathbf{g},r)$ such that the following equations hold:
 \begin{equation}
-0=\int_0^\infty ag(a,1) \diff a  + \int_0^\infty ag(a,2) \diff a  \implies  0=\sum_{i=1}^N a_ig_{i,1} \Delta a + \sum_{i=1}^N a_ig_{i,2} \Delta a
+\begin{split}
+\rho \mathbf{V}&=u(\mathbf{c}) + \mathbf{A}(\mathbf{V};r) \mathbf{V} \\
+0 &= \mathbf{A}(\mathbf{V};r)^T \mathbf{g} \\
+\bar b &= S(\mathbf{g};r)
+\end{split}
 \end{equation}
+where the equations are the discretized (stacked) value function, the discretized (stacked) KF equation and the market clearing condition.
+
 
 
 \subsection{Model Solution}
@@ -351,18 +384,37 @@ Figure \ref{fig:solHousing} plots the solution. Note that the convexity induce t
 \end{center}
 {\small
 
-The dashed vertical line represents the first wealth level you can meet the downpayment requirement. }
+The dashed vertical line represents the first wealth level you can meet the downpayment requirement. Note that both wealth distributions integrate to one, but that in one all the mass is caught in the poverty trap. }
 \end{figure}
 
-
-
-
 \section*{Exercises}
+On the github page you will find two matlab scripts. One solves the decision problem of the benchmark model using the implicit method and the other solves the decision problem with housing. You are welcome to use this as a guiding tool - but of course you can use any programming language you want (e.g. Julia, Matlab, Fortran, Python (with LAPACK)).
+
 \begin{exercise}
 Explain why $x_{1,j}=z_{N,j}=0$, so that $V_{0,1},V_{N+1,j}$ are never used in equation \eqref{eq:systemeq}.  
 \end{exercise}
 
 \begin{exercise}
-Rewrite the program that is posted on the webpage to include a switch so that you can use either the implicit or explicit method. Time the different methods, which one is faster? Which can you `break' easier (e.g. making the grid too sparse, increasing $\gamma$)?
+Rewrite the program that is posted on the webpage to include a switch so that you can use either the implicit or explicit method. Make sure both methods converge
+
+\begin{enumerate} 
+\item Time the different methods, which one is faster? 
+\item Which can you `break' easier (e.g. making the grid too sparse, increasing $\gamma$)? 
+\item What happens when the time-step becomes too large in the explicit method?
+\end{enumerate}
 \end{exercise}
+
+\begin{exercise}
+Write a script that finds the equilibrium interest rate of the benchmark Ayiagari-model with the parameter values from the benchmark script when the net supply is 0.0 and 0.5. Plot the two distribution and policy functions.
+\end{exercise}
+
+\begin{exercise}
+Extend the code using the implicit method to have three income levels. Plot the resulting value functions, policy functions and wealth distributions.
+\end{exercise}
+
+\begin{exercise}{\textbf{Bonus}}: Fork the repo on github, and change the code (e.g. add comments, improve code readability, fix errors) and post a pull request.
+
+\end{exercise}
+
+\bibliography{../../Projects/bib/IntergenPortChoice}
 \end{document}

@@ -188,12 +188,12 @@ subplot(2,3,1)
 
 plot(agrid,V)
 title("Value function")
-legend('Low Income','High Income','Location','SE')
+
 hold on;
 line([astar astar],[-65,50],'Color','k','LineStyle','--')
 hold off;
+legend('Low Income','High Income','hmin feasible','Location','SE')
 ylim([-65 -45])
-
 
 
 subplot(2,3,2)
