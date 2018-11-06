@@ -46,7 +46,7 @@ Households maximize life time expected utility
 a_t\ge 0.
 \end{align}
 
-We can find the HJB by 1) writing down the problem in discrete time and letting the time step go to zero, 2) invoking Ito's Lemma for jump processes or 3) a second order Taylor expansion. All methods yields
+We can find the HJB by 1) writing down the problem in discrete time and letting the time step go to zero, 2) invoking Ito's Lemma for jump processes or 3) a second order Taylor expansion. See appendix \ref{sec:HJBderivation} for a sketch of the first method. All methods yields
 \begin{align}\label{eq:HJB}
 \rho V(a,y) =& \max_{c} \big\{ u(c) + \dot a V_a(a,y) \big\} + \lambda [V(a,\tilde y) - V(a,y)],\\
 &\text{s.t: }\; \dot a = a r - c + y.
@@ -142,7 +142,7 @@ Note that the explicit method requires small time steps (the maximum size is giv
 \subsection{Implicit Method}\label{sec:implicitmethod}
 However, the best way to update the value function is to use the implicit method, where we use the following updating rule:
 \begin{equation}
-\frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta + \rho V^{n+1}_{i,j} =u(c^n_{i,j}) + \dot a \partial V^{n+1}_{i,j} + \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}\Delta + \rho V^{n+1}_{i,j} =u(c^n_{i,j}) + \dot a^n_{i,j} \partial V^{n+1}_{i,j} + \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
 \end{equation}
 where all policies are denoted $n$ and all value functions are denoted $n+1$. We can write this out by inserting for upwinding:
 \begin{equation}
@@ -382,13 +382,13 @@ Figure \ref{fig:solHousing} plots the solution. Note that the convexity induce t
 \label{fig:solHousing}
 \includegraphics[width=1.0\textwidth]{tabfig/benchmarksol_housing}
 \end{center}
-{\small
+{\small 
 
 The dashed vertical line represents the first wealth level you can meet the downpayment requirement. Note that both wealth distributions integrate to one, but that in one all the mass is caught in the poverty trap. }
 \end{figure}
 
 \section*{Exercises}
-On the github page you will find two matlab scripts. One solves the decision problem of the benchmark model using the implicit method and the other solves the decision problem with housing. You are welcome to use this as a guiding tool - but of course you can use any programming language you want (e.g. Julia, Matlab, Fortran, Python (with LAPACK)).
+On the github page you will find two matlab scripts. One solves the decision problem of the benchmark model using the implicit method and the other solves the decision problem with housing. You are welcome to use this as a guiding tool - but of course you can use any programming language you want (e.g. Julia, Matlab, Fortran (with LAPACK), Python etc).
 
 \begin{exercise}
 Explain why $x_{1,j}=z_{N,j}=0$, so that $V_{0,1},V_{N+1,j}$ are never used in equation \eqref{eq:systemeq}.  
@@ -417,4 +417,29 @@ Extend the code using the implicit method to have three income levels. Plot the 
 \end{exercise}
 
 \bibliography{../../Projects/bib/IntergenPortChoice}
+
+\begin{appendix}
+\section{Deriving the HJB equation}\label{sec:HJBderivation}
+Let $\beta(\Delta)=e^{-\rho \Delta}$ and the probability of staying in the income state be given by $\pi(\Delta)=e^{-\lambda \Delta}$.
+
+The Bellman equation is:
+\begin{align*}
+V(a_t,y_t) &= \max_c \left\{u(c)\Delta +\beta(\Delta)\left[\pi(\Delta)V(a_{t+\Delta},y)+ (1-\pi(\Delta)) V(a_{t+\Delta},\tilde y)\right]  \right\} \\
+\text{s.t.\;\;} a_{t+\Delta} &= \Delta(y_j + ra_t - c_t) + a_t,\;\;\; a_{t+\Delta}\ge 0
+\end{align*}
+
+Next, note that for small $\Delta$ we have $\beta(\Delta) \approx (1-\rho\Delta)$ and $\pi(\Delta)\approx 1-\lambda\Delta$. Substitute into the HJB equation:
+$$ V(a_t,y_t) = \max_c \left\{u(c)\Delta +(1-\rho\Delta)\left[(1-\lambda\Delta)V(a_{t+\Delta},y)+ \lambda\Delta V(a_{t+\Delta},\tilde y)\right]  \right\}.$$
+Subtract $(1-\rho\Delta) V(a,y)$ and rearrange:
+\begin{align*} \rho \Delta V(a_t,y_t) =& \max_c \big\{u(c)\Delta   \\
+& +(1-\rho\Delta)\left[V(a_{t+\Delta},y) - V(a_{t},y) + \lambda\Delta \left( V(a_{t+\Delta},\tilde y) - V(a_{t+\Delta},\tilde y) \right)\right] \big\}.
+\end{align*}
+Divide by $\Delta$, let $\Delta \to 0$ and observe that:
+\begin{align*}
+& \lim_{\Delta\to 0}  \frac{V(a_{t+\Delta},y_t) - V(a_t,y_t)}{\Delta} \\
+=& \lim_{\Delta\to 0}  \frac{V(\Delta(y_j + ra_t - c_t) + a_t,y_t) - V(a_t,y_t)}{\Delta} \\
+=& V_a(a_t,y_t)(y_j + ra_t - y_t)
+\end{align*}
+Which then yields the HJB equation in \eqref{eq:HJB}
+\end{appendix}
 \end{document}
