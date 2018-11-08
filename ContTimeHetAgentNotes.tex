@@ -151,7 +151,7 @@ where all policies are denoted $n$ and all value functions are denoted $n+1$. We
 where $\mathbf{1}_F \equiv \mathbf{1}_{\{ra_i + y_j - c_{i,j,F}>0\}}$, and  $c^n_{i,j}$ is still found by upwinding. The key is to recognize that this is a linear system: We have $N$ gridpoints for assets and $2$ for income, and so this is a system of $2\times N$ linear equations. This is becomes clear when we insert also for the derivatives:
 \begin{equation}
 \begin{split}
-\frac{V^{n+1}_{i,j} - V^n_{i,j}}{\Delta} +  \rho V^{n+1}_{i,j} =&u(c^n_{i,j}) + \mathbf{1}_F\dot a_{i,j,F} \frac{V^{n+1}_{i+1,j} - V^{n,}_{i,j}}{\Delta a } + \mathbf{1}_B \dot a_{i,j,B} \frac{V^{n+1}_{i,j} - V^{n,}_{i-1,j}}{\Delta a}  \\
+\frac{V^{n+1}_{i,j} - V^n_{i,j}}{\Delta} +  \rho V^{n+1}_{i,j} =&u(c^n_{i,j}) + \mathbf{1}_F\dot a_{i,j,F} \frac{V^{n+1}_{i+1,j} - V^{n+1}_{i,j}}{\Delta a } + \mathbf{1}_B \dot a_{i,j,B} \frac{V^{n+1}_{i,j} - V^{n+1}_{i-1,j}}{\Delta a}  \\
  & + \lambda [V^{n+1}_{i,-j} - V^{n+1}_{i,j}],
 \end{split}
 \end{equation}
@@ -394,6 +394,7 @@ On the github page you will find two matlab scripts. One solves the decision pro
 Explain why $x_{1,j}=z_{N,j}=0$, so that $V_{0,1},V_{N+1,j}$ are never used in equation \eqref{eq:systemeq}.  
 \end{exercise}
 
+For the rest of the exercises use the parameter values in the posted Matlab script.
 \begin{exercise}
 Rewrite the program that is posted on the webpage to include a switch so that you can use either the implicit or explicit method. Make sure both methods converge
 
