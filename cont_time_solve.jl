@@ -1,3 +1,6 @@
+# Code to solve the benchmark Aiyagari-Bewley-Hugget model
+# Written by Garrett Anstreicher, for ECON899 @ UW - Madison
+
 using Parameters, LinearAlgebra, SparseArrays, Plots
 
 include("cont_time_model.jl")
