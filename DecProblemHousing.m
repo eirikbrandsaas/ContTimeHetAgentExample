@@ -222,14 +222,14 @@ hold off;
 
 
 subplot(2,3,5)
-area(agrid,g1)
+plot(agrid,g1)
 title("Stationary Distribution #1")
 hold on;
 line([astar astar],[0.,40],'Color','k','LineStyle','--')
 hold off;
 
 subplot(2,3,6)
-area(agrid,g2)
+plot(agrid,g2)
 title("Stationary Distribution #2")
 hold on;
 line([astar astar],[0.,10],'Color','k','LineStyle','--')

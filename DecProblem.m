@@ -151,7 +151,7 @@ plot(agrid,zeros(Na),'k')
 hold off
 
 subplot(1,3,3)
-area(agrid,g)
+line(agrid,g)
 title("Conditional Distribution")
 
 % 
