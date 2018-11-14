@@ -1,3 +1,8 @@
+% Code written by Eirik Eylands Brandsaas for ECON899 (Computational
+% Economics at UW-Madison). Code is based on the code contained at 
+% http://www.princeton.edu/~moll/HACTproject.htm, just somewhat simplified
+
+
 %% Set parameters
 clc
 clear 
