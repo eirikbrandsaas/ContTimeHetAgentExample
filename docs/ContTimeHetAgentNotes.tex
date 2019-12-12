@@ -52,7 +52,7 @@ a_t\ge 0.
 \end{align}
 where $\dot a$ denotes the growth of assets, $y$ is income, $r$ is the interest rate and $c$ is the consumption choice. Note that $y,c,\dot a$ are flows while $a$ is a stock. The income process $y_t$ is an endowment that follows a Poisson process ($\approx$ continuous time Markov Chain) where $\lambda_{ij}$ denote the arrival rate of shocks moving the household from income $y_i$ to $y_j$. For simplicity, assume there are only two income states, high and low. Note how similar this is to what you've seen before in 712 and in this class. See section \ref{sec:derbc} for how to derive the budget constraint. 
 
-As in discrete time we want to rewrite this problem into a recursive form, here called the Hamilton–Jacobi–Bellman (HJB) equation. There are (at least) three methods to derive this equation, and all yield the same answer: 1) writing down the problem in discrete time and letting the time step go to zero, 2) invoking Ito's Lemma for jump processes or 3) a second order Taylor expansion. See appendix \ref{sec:HJBderivation} for a sketch of how to do it by letting the time-step go to zero. \cite{Barczyk2017} show how to do it by a Taylor expansion. \textit{This is the HJB equation, no matter how you derive it:}
+As in discrete time we want to rewrite this problem into a recursive form, here called the Hamilton–Jacobi–Bellman (HJB) equation. There are (at least) three methods to derive this equation, and all yield the same answer: 1) writing down the problem in discrete time and letting the time step go to zero, 2) invoking Ito's Lemma for jump processes or 3) a second order Taylor expansion. See appendix \ref{sec:HJBderivation} for a sketch of how to do it by letting the time-step go to zero. \cite{Barczyk2017} show how to do it by a Taylor expansion. This is {the} HJB equation, no matter how you derive it:
 
 \begin{align}\label{eq:HJB}
 \rho V(a,y) =& \max_{c} \big\{ u(c) + \dot a V_a(a,y) \big\} + \lambda [V(a,\tilde y) - V(a,y)],\\
@@ -296,7 +296,7 @@ From these expressions we see clearly that we are capturing the mass that flows 
 where $T$ denotes the transpose. In the language of dynamic control, $\mathbf{A}$ is the discretized infintesimal generator and $\mathbf{A}^T$ is the discretized Kolmogorov Forward operator.
 
 \subsection{Note}
-Note that equation \eqref{eq:stationarydist} is an eigenvalue problem. The matrix $\mathbf{A}^T$ is singular, so to invert you either re-normalize one row (see the Matlab code for an example) or you use an eigenvalue solver. The key is that any non-negative vector $g$ that solves equation $\ref{eq:stationarydist}$   is \textit{a} stationary distribution, and there are many ways to find that equation.
+The matrix $\mathbf{A}^T$ is singular, so to invert you either re-normalize one row (see the Matlab code for an example) or you use an eigenvalue solver. The key is that any non-negative vector $g$ that solves equation $\ref{eq:stationarydist}$   is \textit{a} stationary distribution, and there are many ways to find that equation.
 
 \subsection{Equilibrium}
 The last remaining piece is to close the asset market. The easiest way is to use Hugget's version, where the net supply of bonds equals some exogenous level $\bar b$, say $\bar b = 0$:
@@ -338,7 +338,7 @@ As I see it there are four major benefits of this framework:
 \item The method is extremely easy to extend. One can include portfolio choices, housing, multiple generations, life-cycle, labor-leisure choices all with minimal modification to the solution algorithm
 \end{itemize}
 
-There is no free lunch, however:
+However, there is no free lunch:
 \begin{itemize}
 \item The method is generally not as robust as the standard discrete time value function iteration. In particular, it struggles when there is a lot of curvature and there are some issues regarding discrete choices (`optimal stopping time').
 \item The method can struggle as the HJB equation becomes increasingly non-linear, and may require `too many' grid points
